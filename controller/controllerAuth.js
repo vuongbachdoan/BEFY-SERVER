@@ -3,12 +3,16 @@ require('dotenv').config()
 const User = require('../model/modelUser')
 const passport = require('passport')
 
-passport.serializeUser((user, done) => {
-    done(null, user)
+passport.serializeUser((user, cb) => {
+    process.nextTick(() => {
+        cb(null, user)
+    })
 })
 
-passport.deserializeUser(function(user, done) {
-    done(null, user);
+passport.deserializeUser(function(user, cb) {
+    process.nextTick(() => {
+        cb(null, user)
+    })
 });
 
 const GoogleStrategy = require('passport-google-oidc')
@@ -20,13 +24,14 @@ passport.use(
             callbackURL: process.env.CALLBACK_URL
         },
         function verify(_, profile, cb) {
-            User.findOne({ googleId: profile.id })
+            if(profile.id) {
+                User.findOne({ googleId: profile.id })
                 .then(
                     (user) => {
                         console.log(user)
                         if (user !== null) {
                             console.log(`Exist user: ${user}`)
-                            cb(null, user)
+                            return cb(null, user)
                         } else {
                             new User({
                                 googleId: profile.id,
@@ -39,7 +44,9 @@ passport.use(
                         }
                     }
                 )
-
+            } else {
+                cb(null, false)
+            }
         }
     )
 )
@@ -55,6 +62,7 @@ passport.use(new FacebookStrategy(
         console.log(profile)
         console.log(accessToken)
         cb(null, profile)
+        
     }
 ))
 
@@ -66,7 +74,7 @@ const errorHandler = (res) => {
 }
 
 const ControllerAuth = {
-    viewLogin: async (req, res) => {
+    viewLogin: (req, res) => {
         return res.render('login')
     },
     loginGoogle: passport.authenticate(
