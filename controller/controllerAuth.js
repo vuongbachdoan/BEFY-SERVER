@@ -4,14 +4,12 @@ const User = require('../model/modelUser')
 const passport = require('passport')
 
 passport.serializeUser((user, done) => {
-    done(null, user.id)
+    done(null, user)
 })
-passport.deserializeUser((id, done) => {
-    User.findById(id)
-        .then(user => {
-            done(null, user)
-        })
-})
+
+passport.deserializeUser(function(user, done) {
+    done(null, user);
+});
 
 const GoogleStrategy = require('passport-google-oidc')
 passport.use(
@@ -21,22 +19,23 @@ passport.use(
             clientSecret: process.env.CLIENT_SECRET,
             callbackURL: process.env.CALLBACK_URL
         },
-        function verify(issuer, profile, cb) {
+        function verify(_, profile, cb) {
             User.findOne({ googleId: profile.id })
                 .then(
                     (user) => {
                         console.log(user)
                         if (user !== null) {
                             console.log(`Exist user: ${user}`)
+                            cb(null, user)
                         } else {
                             new User({
                                 googleId: profile.id,
                                 email: profile.emails[0].value,
                                 name: profile.displayName
                             }).save()
-                            .then(
-                                res => console.log(res)
-                            )
+                                .then(
+                                    res => cb(null, res)
+                                )
                         }
                     }
                 )
@@ -44,6 +43,20 @@ passport.use(
         }
     )
 )
+
+const FacebookStrategy = require('passport-facebook').Strategy
+passport.use(new FacebookStrategy(
+    {
+        clientID: process.env.FACEBOOK_ID,
+        clientSecret: process.env.FACEBOOK_SECRET_KEY,
+        callbackURL: process.env.CALLBACK_URL_FACEBOOK
+    },
+    function verify(accessToken, refreshToken, profile, cb) {
+        console.log(profile)
+        console.log(accessToken)
+        cb(null, profile)
+    }
+))
 
 const errorHandler = (res) => {
     return res.status(500).json({
@@ -66,9 +79,18 @@ const ControllerAuth = {
         'google',
         {
             successRedirect: '/oauth/success',
-            failureRedirect: '/oauth/fail'
+            failureRedirect: '/oauth'
+        }
+    ),
+    loginFacebook: passport.authenticate(
+        'facebook'
+    ),
+    redirectFacebook: passport.authenticate(
+        'facebook',
+        {
+            successRedirect: '/oauth/success',
+            failureRedirect: '/oauth'
         }
     )
 }
-
 module.exports = ControllerAuth
