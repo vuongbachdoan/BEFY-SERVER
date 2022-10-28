@@ -10,47 +10,66 @@ const handleError = (res) => {
 const ControllerApp = {
     getHome: async (req, res) => {
         try {
-            const data = await ZingMp3.getHome();
-            return res.status(200).json({
-                success: true,
-                data: data
-            });
+            if(req.session.user) {
+                const data = await ZingMp3.getHome();
+                return res.status(200).json({
+                    success: true,
+                    data: data
+                });
+            } else {
+                return handleError(res)
+            }
+            
         } catch (error) {
             return handleError(res)
         }
     },
     getPlaylist: (req, res) => {
         try {
-            return ZingMp3.getDetailPlaylist(req.query.id).then((data) => {
-                res.status(200).json({
-                    success: true,
-                    data: data
+            if(req.session.user) {
+                return ZingMp3.getDetailPlaylist(req.query.id).then((data) => {
+                    res.status(200).json({
+                        success: true,
+                        data: data
+                    })
                 })
-            })
+            } else {
+                return handleError(res)
+            }
+            
         } catch (error) {
             return handleError(res)
         }
     },
     getSong: (req, res) => {
         try {
-            return ZingMp3.getSong(req.query.id).then((data) => {
-                res.status(200).json({
-                    success: true,
-                    data: data
+            if (req.session.user) {
+                return ZingMp3.getSong(req.query.id).then((data) => {
+                    res.status(200).json({
+                        success: true,
+                        data: data
+                    })
                 })
-            })
+            } else {
+                return handleError(res)
+            }
+            
         } catch (error) {
             return handleError(res)
         }
     },
     search: (req, res) => {
         try {
-            return ZingMp3.search(req.query.keyword).then((data) => {
-                res.status(200).json({
-                    success: true,
-                    data: data
+            if(req.session.user) {
+                return ZingMp3.search(req.query.keyword).then((data) => {
+                    res.status(200).json({
+                        success: true,
+                        data: data
+                    })
                 })
-            })
+            } else {
+                return handleError(res)
+            }
         } catch (error) {
             return handleError(res)
         }

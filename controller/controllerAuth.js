@@ -3,16 +3,13 @@ require('dotenv').config()
 const User = require('../model/modelUser')
 const passport = require('passport')
 
-passport.serializeUser((user, cb) => {
-    process.nextTick(() => {
-        cb(null, user)
-    })
+passport.serializeUser((user, done) => {
+    return done(null, user)
 })
 
-passport.deserializeUser(function(user, cb) {
-    process.nextTick(() => {
-        cb(null, user)
-    })
+passport.deserializeUser((req, user, done) => {
+    req.session.user = user
+    return done(null, user)
 });
 
 const GoogleStrategy = require('passport-google-oidc')
@@ -24,28 +21,27 @@ passport.use(
             callbackURL: process.env.CALLBACK_URL
         },
         function verify(_, profile, cb) {
-            if(profile.id) {
+            if (profile.id) {
                 User.findOne({ googleId: profile.id })
-                .then(
-                    (user) => {
-                        console.log(user)
-                        if (user !== null) {
-                            console.log(`Exist user: ${user}`)
-                            return cb(null, user)
-                        } else {
-                            new User({
-                                googleId: profile.id,
-                                email: profile.emails[0].value,
-                                name: profile.displayName
-                            }).save()
-                                .then(
-                                    res => cb(null, res)
-                                )
+                    .then(
+                        (user) => {
+                            if (user !== null) {
+                                console.log(`Exist user: ${user}`)
+                                return cb(null, user)
+                            } else {
+                                new User({
+                                    googleId: profile.id,
+                                    email: profile.emails[0].value,
+                                    name: profile.displayName
+                                }).save()
+                                    .then(
+                                        res => cb(null, res)
+                                    )
+                            }
                         }
-                    }
-                )
+                    )
             } else {
-                cb(null, false)
+                return cb(null, false)
             }
         }
     )
@@ -59,10 +55,7 @@ passport.use(new FacebookStrategy(
         callbackURL: process.env.CALLBACK_URL_FACEBOOK
     },
     function verify(accessToken, refreshToken, profile, cb) {
-        console.log(profile)
-        console.log(accessToken)
-        cb(null, profile)
-        
+        return cb(null, accessToken)
     }
 ))
 
@@ -93,12 +86,19 @@ const ControllerAuth = {
     loginFacebook: passport.authenticate(
         'facebook'
     ),
-    redirectFacebook: passport.authenticate(
-        'facebook',
-        {
-            successRedirect: '/oauth/success',
-            failureRedirect: '/oauth'
-        }
-    )
+    redirectFacebook: (req, res) => {
+        passport.authenticate(
+            'facebook',
+            {
+                successRedirect: '/oauth/success',
+                failureRedirect: '/oauth'
+            }
+        )
+    },
+    logout: (req, res) => {
+        req.logout();
+        req.session.destroy();
+        res.redirect(`http://localhost:${process.env.PORT}/oauth/logut`);
+    }
 }
 module.exports = ControllerAuth
