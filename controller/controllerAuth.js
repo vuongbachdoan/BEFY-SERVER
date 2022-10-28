@@ -96,9 +96,16 @@ const ControllerAuth = {
         )
     },
     logout: (req, res) => {
-        req.logout();
-        req.session.destroy();
-        res.redirect(`http://localhost:${process.env.PORT}/oauth/logut`);
+        try {
+            req.logout(
+                (err) => {
+                    if(err) errorHandler(res)
+                }
+            );
+            return res.redirect('/oauth')
+        } catch (error) {
+            return errorHandler(res)
+        }
     }
 }
 module.exports = ControllerAuth
