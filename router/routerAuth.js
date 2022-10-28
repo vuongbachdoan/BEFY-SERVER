@@ -12,5 +12,6 @@ router.get('/facebook', ControllerAuth.loginFacebook)
 router.get('/google/callback', ControllerAuth.redirectGoogle)
 router.get('/facebook/callback', ControllerAuth.redirectFacebook)
 router.get('/success', (req, res) => res.send('Success!'))
+router.get('/logout', ControllerAuth.logout)
 
 module.exports = router;              
