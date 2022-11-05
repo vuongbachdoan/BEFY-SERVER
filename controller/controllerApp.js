@@ -8,25 +8,27 @@ const handleError = (res) => {
 }
 
 const ControllerApp = {
-    getHome: async (req, res) => {
+    getHome: (req, res) => {
         try {
-            if(req.session.user) {
-                const data = await ZingMp3.getHome();
-                return res.status(200).json({
-                    success: true,
-                    data: data
-                });
-            } else {
-                return handleError(res)
+            if(req.session.passport.user) {
+                return ZingMp3.getHome()
+                .then(data => {
+                    return res.status(200).json({
+                        success: true,
+                        data: data
+                    });
+                })
             }
-            
         } catch (error) {
-            return handleError(res)
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            })
         }
     },
     getPlaylist: (req, res) => {
         try {
-            if(req.session.user) {
+            if (req.session.passport.user) {
                 return ZingMp3.getDetailPlaylist(req.query.id).then((data) => {
                     res.status(200).json({
                         success: true,
@@ -36,14 +38,14 @@ const ControllerApp = {
             } else {
                 return handleError(res)
             }
-            
+
         } catch (error) {
             return handleError(res)
         }
     },
     getSong: (req, res) => {
         try {
-            if (req.session.user) {
+            if (req.session.passport.user) {
                 return ZingMp3.getSong(req.query.id).then((data) => {
                     res.status(200).json({
                         success: true,
@@ -53,14 +55,14 @@ const ControllerApp = {
             } else {
                 return handleError(res)
             }
-            
+
         } catch (error) {
             return handleError(res)
         }
     },
     search: (req, res) => {
         try {
-            if(req.session.user) {
+            if (req.session.passport.user) {
                 return ZingMp3.search(req.query.keyword).then((data) => {
                     res.status(200).json({
                         success: true,
@@ -72,6 +74,18 @@ const ControllerApp = {
             }
         } catch (error) {
             return handleError(res)
+        }
+    },
+    getPlaylist: (req, res) => {
+        try {
+            ZingMp3.getDetailPlaylist(req.query.id).then((data) => {
+                return res.status(200).json({
+                    success: true,
+                    data: data
+                })
+            })
+        } catch (error) {
+            handleError(res)
         }
     }
 }
