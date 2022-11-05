@@ -4,12 +4,15 @@ const User = require('../model/modelUser')
 const passport = require('passport')
 
 passport.serializeUser((user, done) => {
-    return done(null, user)
+    process.nextTick(() => {
+        done(null, user)
+    })
 })
 
-passport.deserializeUser((req, user, done) => {
-    req.session.user = user
-    return done(null, user)
+passport.deserializeUser((user, done) => {
+    process.nextTick(() => {
+        done(null, user)
+    })
 });
 
 const GoogleStrategy = require('passport-google-oidc')
@@ -27,7 +30,7 @@ passport.use(
                         (user) => {
                             if (user !== null) {
                                 console.log(`Exist user: ${user}`)
-                                return cb(null, user)
+                                cb(null, user)
                             } else {
                                 new User({
                                     googleId: profile.id,
@@ -35,13 +38,15 @@ passport.use(
                                     name: profile.displayName
                                 }).save()
                                     .then(
-                                        res => cb(null, res)
+                                        res => {
+                                            cb(null, res)
+                                        }
                                     )
                             }
                         }
                     )
             } else {
-                return cb(null, false)
+                cb(null, false)
             }
         }
     )
@@ -79,8 +84,8 @@ const ControllerAuth = {
     redirectGoogle: passport.authenticate(
         'google',
         {
-            successRedirect: '/oauth/success',
-            failureRedirect: '/oauth'
+            successRedirect: process.env.APP_PORT,
+            failureRedirect: `${process.env.APP_PORT}/login`
         }
     ),
     loginFacebook: passport.authenticate(
@@ -100,6 +105,9 @@ const ControllerAuth = {
             req.logout(
                 (err) => {
                     if(err) errorHandler(res)
+                    else {
+                        localStorage.removeItem('user')
+                    }
                 }
             );
             return res.redirect('/oauth')

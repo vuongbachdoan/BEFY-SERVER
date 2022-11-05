@@ -4,17 +4,26 @@ require('dotenv').config()
 const mongoose = require('mongoose')
 const passport = require('passport')
 const session = require('express-session')
+const cors = require('cors')
+const bodyParser = require('body-parser')
+const cookieSession = require('cookie-session')
 
 mongoose.connect(process.env.MONGODB_URI, () => {
     console.log('Connected to MongoDB')
 })
 app.set('view engine', 'ejs')
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
+app.use(cors())
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json())
+// app.use(cookieSession({
+//     name: 'user',
+//     keys: ['NKCjCACK'],
+//     maxAge: 24 * 60 * 60 * 1000,
+// }))
 app.use(session({
-    secret: "secret",
-    saveUninitialized: true,
-    resave: true
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: false,
 }))
 app.use(passport.initialize());
 app.use(passport.session());
